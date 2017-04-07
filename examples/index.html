@@ -13,29 +13,70 @@
         display: flex;
         flex-direction: column;
 
-        /*user-select: none;
-        cursor: default;*/
+        margin: 0px;
       }
 
-      h2 {
-        color: #f90;
+      canvas:focus {
+        outline: 0;
+      }
+
+      .flex {
+        flex: 1;
       }
     </style>
+    <script src="../node_modules/regl/dist/regl.js"></script>
+    <script src="../node_modules/input.js/dist/input.dev.js"></script>
+    <script src="../node_modules/vmath/dist/vmath.dev.js"></script>
+    <script src="../node_modules/scene-graph/dist/scene-graph.dev.js"></script>
+    <script src="../node_modules/debug-draw/dist/debug-draw.dev.js"></script>
     <script src="../dist/gl-stats.dev.js"></script>
   </head>
 
   <body>
-    <h2>gl-stats</h2>
+    <canvas id="canvas" class="flex" tabindex="-1"></div>
     <script>
       'use strict';
 
       let stats = new window.GLStats(document.body);
 
-      function render() {
-        requestAnimationFrame(render);
-      }
+      const vmath = window.vmath;
+      const ddraw = window.ddraw;
+      const sgraph = window.sgraph;
 
-      render();
+      // init global
+      let canvasEL = document.getElementById('canvas');
+      let shell = new ddraw.Shell(canvasEL);
+      let renderer = shell._renderer;
+
+      stats.inspect(renderer._regl._gl);
+
+      // init scene
+      let root = new sgraph.Node('root');
+      let n0 = new sgraph.Node('n0');
+      n0.lpos = vmath.vec3.new(5, 0.5, 0);
+
+      let n1 = new sgraph.Node('n1');
+      n1.lpos = vmath.vec3.new(2, 0, 0);
+
+      root.append(n0);
+      n0.append(n1);
+      let list = sgraph.utils.flat(root);
+
+      let rot = vmath.quat.create();
+
+      // frame
+      shell.frame(() => {
+        stats.reset();
+
+        vmath.quat.rotateY(root.lrot, root.lrot, vmath.toRadian(1));
+        vmath.quat.rotateX(n0.lrot, n0.lrot, vmath.toRadian(5));
+
+        n1.setWorldRot(rot);
+
+        list.forEach(node => {
+          renderer.drawNode(node);
+        });
+      });
     </script>
   </body>
 </html>
